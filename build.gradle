@@ -11,9 +11,29 @@ buildscript {
 }
 
 apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'java'
 apply plugin: 'scala'
 
 sourceCompatibility = 1.8
+
+sourceSets {
+    main {
+        scala {
+            srcDirs = ['src/main/java', 'src/main/scala']
+        }
+        java {
+            srcDirs = []
+        }
+    }
+}
+
+jar {
+    manifest {
+        attributes(
+            'Main-Class' : 'org.cacrawford.neuralnet.Driver'
+        )
+    }
+}
 
 task wrapper(type: Wrapper) {
     gradleVersion = '4.7'

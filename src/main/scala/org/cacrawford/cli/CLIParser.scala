@@ -72,7 +72,7 @@ class ParamTree {
         posArgs = posArgs.tail
         val subtree = subtrees(action)(command)
         val newOptions = subtree.parse(posArgs, optArgs)
-        optArgs = optArgs.filter { case (key, _) => newOptions.keys.map(_.name).toSeq.contains(key) }
+        optArgs = optArgs.filter { case (key, _) => !newOptions.keys.map(_.name).toSeq.contains(key) }
         Seq(action -> command) ++ newOptions
     }.toMap
   }

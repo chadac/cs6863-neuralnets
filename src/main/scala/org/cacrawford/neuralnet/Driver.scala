@@ -24,7 +24,7 @@ object Driver extends CLIApp {
 
   val initNeurons: Param[Int] = Param("num-init-neurons")
     .help("The number of neurons that are activated initially.")
-    .default { $(numNeuronsPerNode) } // wrap in braces so it isn't evaluated immediately, which is currently a bug
+    .default { $(numNeuronsPerNode)/2 } // wrap in braces so it isn't evaluated immediately
     .validation(validators.INT_GEQ(1))
     .register
 
@@ -36,19 +36,19 @@ object Driver extends CLIApp {
 
   val sparse: Param[Double] = Param("sparse")
     .help("Parameter specifying how sparse the DC chains will be.")
-    .default(1d)
+    .default(4d)
     .validation(validators.DOUBLE_GEQ(1))
     .register
 
   val scale: Param[Double] = Param("scale")
     .help("Parameter specifying how large the weights on the DC chains will be.")
-    .default(1d)
+    .default(1.8d)
     .validation(validators.DOUBLE_GEQ(0))
     .register
 
   val k: Param[Int] = Param("k")
     .help("The node degree in the network.")
-    .default(2)
+    .default(4)
     .validation((x: Int) => if(x % 2 == 0) ValidateSuccess() else ValidateError("k must be even."))
 
   val neuronType = Action[Neuron]("neuron-type")
@@ -92,7 +92,7 @@ object Driver extends CLIApp {
       override def name = "erdos-renyi"
       val p: Param[Double] = Param("p")
         .help("The probability of an edge between two nodes existing.")
-        .default(0.01)
+        .default(0.04)
         .validation(validators.AND(validators.DOUBLE_GEQ(0), validators.DOUBLE_LEQ(1)))
         .register
       override def exec() = new net.ErdosRenyi[Neuron]($(p))
@@ -100,7 +100,7 @@ object Driver extends CLIApp {
     .register
 
 
-  def genSim(useVis: Boolean = false): Simulator = {
+  def genSim(useVis: Boolean = false): (DCNetwork, Option[NetworkVisualizer]) = {
     val nodes: Seq[Neuron] = (1 to $(numNodes)).map(_ => $(neuronType).exec())
     val net = $(networkType).exec()(nodes)
     nodes.head.init($(initNeurons), 1)
@@ -112,7 +112,7 @@ object Driver extends CLIApp {
       Some(vis1)
     } else None
     val dcNet = DCNetwork.generate(net.nodes, net.edges, $(sparse), $(scale))
-    new Simulator(dcNet, vis=vis)
+    (dcNet, vis)
   }
 
   val action: Action[Unit] = Action("action")
@@ -121,8 +121,8 @@ object Driver extends CLIApp {
       override val help = "Runs a single simulation of the network."
 
       override def exec(): Unit = {
-        val sim = genSim(useVis = true)
-        sim.run()
+        val (dcNet, vis) = genSim(useVis = true)
+        Simulator.run(dcNet, vis)
       }
     })
     .add(new Command[Unit] {
@@ -131,21 +131,22 @@ object Driver extends CLIApp {
 
       val numTrials: Param[Int] = Param("num-trials")
         .help("The number of trials to run this simulation for.")
-        .default(10)
+        .default(100)
         .validation(validators.INT_GEQ(1))
         .register
 
-      val outputFile: Param[File] = Param("output-file")
-        .help("The file to write output to.")
-        .default(new File("output.csv"))
+      val outputFile: Param[String] = Param("output-file")
+        .help("The file prefix to write output to. (NOTE: saves to '_sim.csv' and '_time.csv')")
+        .default("output")
         .register
 
       override def exec(): Unit = {
-        for(trial <- 1 to $(numTrials)) {
-          println(s"trial $trial")
-          val sim = genSim()
-          sim.run()
+        val results: Seq[SimRecord] = (1 to $(numTrials)).map { trial =>
+//          println(s"trial $trial")
+          val (dcNet, vis) = genSim()
+          Simulator.run(dcNet, vis)
         }
+        Simulator.save(results, $(outputFile))
       }
     })
     .register

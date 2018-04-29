@@ -59,5 +59,5 @@ class MCPNeuron(override val size: Int) extends Neuron(size) {
   * @param size The number of neurons this "neuron" represents
   */
 class SigmoidNeuron(override val size: Int) extends Neuron(size) {
-  override def f(newX: DenseVector[Double]): DenseVector[Double] = ((exp(2d-newX) + 1d)^:^(-1d)) /:/ (x + 1d)
+  override def f(newX: DenseVector[Double]): DenseVector[Double] = ((exp((1d-newX)*10d) + 1d)^:^(-1d)) /:/ (x + 1d)
 }

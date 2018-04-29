@@ -14,7 +14,7 @@ package object net {
   class Ring[T](val k: Int) extends Generator[T] {
     override def apply(nodes: Seq[T]): Network[T] = {
       val edges: Seq[(T, T)] = nodes.indices.flatMap { i =>
-        (i+1 to i+k+1).map(j =>
+        (i+1 to i+k/2).map(j =>
           (nodes(i), nodes(j % nodes.size))
         )
       }
@@ -48,7 +48,7 @@ package object net {
   class Chain[T](val k: Int) extends Generator[T] {
     override def apply(nodes: Seq[T]): Network[T] = {
       val edges: Seq[(T, T)] = nodes.indices.flatMap { i =>
-        (i+1 to Math.min(i+k+1, nodes.size-1)).map(j =>
+        (i+1 to Math.min(i+k/2, nodes.size-1)).map(j =>
           (nodes(i), nodes(j % nodes.size))
         )
       }

@@ -74,7 +74,7 @@ public class NetworkVisualizer {
   public void updateNeuron(Neuron neuron, double newValue) {
     Node n = graph.getNode(name(neuron));
     n.addAttribute("ui.color", newValue);
-    if(newValue > 0)
+    if(newValue > 1e-2)
       n.addAttribute("ui.class", "active");
     else if(n.hasAttribute("ui.class"))
       n.removeAttribute("ui.class");
